@@ -3,7 +3,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import gnu.io.*; // RXTX
-import java.util.Enumeration;
 
 public class SerialPortHandler {
     private SerialPort serialPort;
@@ -37,6 +36,10 @@ public class SerialPortHandler {
             throw e;
         }
     }
+    
+    public void disconnect() throws IOException {
+        serialPort.close();
+      }
 
     /**
      * Get the serial port input stream

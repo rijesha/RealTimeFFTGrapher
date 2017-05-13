@@ -1,18 +1,21 @@
 
-public class ComplexFftParser {
+public class FftParser {
 	private double[] real;
 	private double[] imag;
-	private double[] fft;
 	private double[] mag;
-	private int n;
+	private double[] fft;
+	private int length;
 	
-	public ComplexFftParser(double[] fft){
+	private boolean isComplex;
+	
+	public FftParser(double[] fft, boolean isComplex){
 		this.fft = fft;
-		n = fft.length;
+		this.isComplex = isComplex;
+		length = fft.length;
 		
-		real = new double[n];
-		imag = new double[n];
-		mag = new double[n];
+		real = new double[length];
+		imag = new double[length];
+		mag  = new double[length];
 		
 		
 		if (((fft.length/2) & 1) == 0)
@@ -20,40 +23,36 @@ public class ComplexFftParser {
 		else
 			parseOdd();
 	}
-	
+
 	public  double[] returnMagnitudeArray(){
-		for (int i = 0; i < n; i++){
+		for (int i = 0; i < length; i++){
 			mag[i] = Math.hypot(real[i], imag[i]);
 		}
 		return mag;
 	}
 	
 	public  double[] returnMagnitudeLogArray(){
-		for (int i = 0; i < n; i++){
+		for (int i = 0; i < length; i++){
 			mag[i] = 20* Math.log10(Math.hypot(real[i], imag[i]));
 		}
 		return mag;
 	}
 	
-	public Complex[] returnComplexArray(){
+	public  Complex[] returnComplexArray(){
 		return Complex.arrayToComplexArray(real, imag);
 	}
 	
 	private void parseEven(){
-		for(int k = 0; k < n/2; k++){
+		for(int k = 0; k < length/2; k++){
 			real[k] = fft[2*k];
 			imag[k] = fft[2*k+1];	
 		}
+		if (!isComplex)
+			real[length/2] = fft[1];
 	}
 	
 	private void parseOdd(){
-		//for(int k = 0; k < (n+1)/2; k++){
-		//	real[k] = fft[2*k];
-	//	}
 		System.out.println("ODD has yet to be developed");
-
-//		complex[k] = fft[2*k];	
-	//	real[n/2] = fft[1];
 	}
 	
 
