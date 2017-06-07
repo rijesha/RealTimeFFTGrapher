@@ -8,11 +8,14 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import org.apache.commons.cli.*;
 
 public class project_main {
 	private static Logger logger;
 	private static boolean loggerStart;
-	
+
+	private static boolean disableGUI;
+
 	private static RealTimeGraph chart1;
 	private static RealTimeGraph chart2;
 	
@@ -29,7 +32,9 @@ public class project_main {
 	private static JButton stopButton = new JButton("Stop Logging");
 	
 	public static void main(String[] args) {
-		logger = new Logger();
+		parseCLI(args);
+		logger = new Logger(loggerStart);
+		//Logger.toggleLogging(loggerStart);
 		
 		SerialPortHandler s = new SerialPortHandler();	
 		in = s.getSerialInputStream();
@@ -50,13 +55,12 @@ public class project_main {
 		try {
 			Thread.sleep(200);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//testFFT();
 		
-		
-		newFrame();
+		if (!disableGUI)
+			newFrame();
+
 		try {
 			s.connect("COM9");
 			findHeaderStart();
@@ -67,6 +71,34 @@ public class project_main {
 		        
         
 	}
+	
+	private static void parseCLI(String[] args) {
+		Options options = new Options();
+
+        Option input = new Option("c", "disable_gui", false, "disable the gui");
+        options.addOption(input);
+
+        Option output = new Option("l", "start_logging", false, "enabling logging on startup");
+        options.addOption(output);
+
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter formatter = new HelpFormatter();
+        CommandLine cmd;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            formatter.printHelp("Real Time FFT Grapher", options);
+
+            System.exit(1);
+            return;
+        }
+
+        disableGUI = cmd.hasOption("disable_gui");
+		loggerStart = cmd.hasOption("start_logging");
+	}
+
 	
 	private static void newFrame(){
 		JFrame frame = new JFrame("Fancy Graph");

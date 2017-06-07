@@ -14,8 +14,9 @@ public class Logger implements Runnable, ActionListener{
 	private boolean logging = false;
 	private Thread thread;
 	
-	public Logger(){
-		writeQueue = new LinkedBlockingQueue<String>(); 
+	public Logger(boolean start){
+		writeQueue = new LinkedBlockingQueue<String>();
+		toggleLogging(start);
 	}
 	
 	public void makeNewLog(){
@@ -49,6 +50,21 @@ public class Logger implements Runnable, ActionListener{
 		writer.close();
 		
 	}
+
+	public void toggleLogging(boolean start){
+		if (start){
+			if (!logging)
+				makeNewLog();
+				shutdown = false;
+				thread = new Thread(this);
+		    	thread.start();
+			logging = true;
+		}
+		else{
+			logging = false;
+			shutdown = true;
+		}
+	}
 	
 	@Override
 	public void run() {
@@ -71,18 +87,7 @@ public class Logger implements Runnable, ActionListener{
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String command = e.getActionCommand();
-		if (command == "Start Logging"){
-			if (!logging)
-				makeNewLog();
-				shutdown = false;
-				thread = new Thread(this);
-		    	thread.start();
-			logging = true;
-		}
-		if (command == "Stop Logging"){
-			logging = false;
-			shutdown = true;
-		}
+		toggleLogging(command == "Start Logging");
 		System.out.println(e);
 		// TODO Auto-generated method stub
 		

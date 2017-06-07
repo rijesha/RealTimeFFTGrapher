@@ -39,6 +39,8 @@
                 <path refid="classpath"/>
                 <path location="${jar.dir}/${ant.project.name}.jar"/>
             </classpath>
+            <arg value="${arg0}"/>
+            <arg value="${arg1}"/>
         </java>
     </target>
 
