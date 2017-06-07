@@ -1,11 +1,17 @@
+import java.awt.Container;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 
 public class project_main {
+	private static Logger logger;
+	private static boolean loggerStart;
 	
 	private static RealTimeGraph chart1;
 	private static RealTimeGraph chart2;
@@ -13,27 +19,44 @@ public class project_main {
 	private static FftPlotter realFftPlotter; // = new RealFftPlotter(32);
 	private static FftPlotter complexFftPlotter;
 	
+	private static int SAMPLINGFREQ = 125;
+			
 	private static InputStream in;
 	private static byte[] dataPacket = new byte[10];
-	private static int realTimeUpdateRatio = 4;
+	private static int REALTIMEUPDATERATIO = 4;
 
+	private static JButton startButton = new JButton("Start Logging");
+	private static JButton stopButton = new JButton("Stop Logging");
+	
 	public static void main(String[] args) {
+		logger = new Logger();
+		
 		SerialPortHandler s = new SerialPortHandler();	
 		in = s.getSerialInputStream();
 
 		chart1 = new RealTimeGraph("In Phase Voltage Signal", "Voltage", "");
 		chart2 = new RealTimeGraph("In Quadrature Voltage Signal", "Voltage", "");
 		
-		realFftPlotter = new FftPlotter("Real FFT", "power", "Frequency (Hz)", 32, false);
-		complexFftPlotter = new FftPlotter("Real FFT", "power", "Frequency (Hz)", 32, true);
-				
-		displayGraph(chart1);
-		displayGraph(chart2);
+		realFftPlotter = new FftPlotter("Real FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, false);
+		complexFftPlotter = new FftPlotter("Complex FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, true);
 		
-		displayGraph(realFftPlotter.getGraph());
-		displayGraph(complexFftPlotter.getGraph());
+		Thread fftreal = new Thread(realFftPlotter);
+		fftreal.start();
+
+		Thread fftcomplex = new Thread(complexFftPlotter);
+		fftcomplex.start();
+
+
+		try {
+			Thread.sleep(200);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//testFFT();
 		
 		
+		newFrame();
 		try {
 			s.connect("COM9");
 			findHeaderStart();
@@ -41,15 +64,58 @@ public class project_main {
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
+		        
         
 	}
 	
-	private static void displayGraph(JPanel graph){
-		JFrame frame = new JFrame("testing");
+	private static void newFrame(){
+		JFrame frame = new JFrame("Fancy Graph");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(graph);
-        frame.pack();
-        frame.setVisible(true);
+        Container pane = frame.getContentPane();
+		
+        frame.setSize(50, 75);
+		pane.setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		
+		c.ipady = 25;      //make this component tall
+		c.ipadx = 25;      //make this component tall
+		c.fill = GridBagConstraints.BOTH;
+		c.weightx = 0.5;
+		c.weighty = 1;
+
+		c.gridx = 0;
+		c.gridy = 0;
+		pane.add(chart1, c);
+
+		c.gridx = 1;
+		pane.add(chart2, c);
+
+		c.gridx = 0;
+		c.gridy = 1;
+		pane.add(realFftPlotter.getGraph(), c);
+
+		c.gridx = 1;
+		pane.add(complexFftPlotter.getGraph(), c);
+
+		
+		JPanel panel = new JPanel();
+		
+		startButton.addActionListener(logger);
+		panel.add(startButton);
+		
+		stopButton.addActionListener(logger);
+		panel.add(stopButton);
+		
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.ipady = 1;       //reset to default
+		c.weighty = 1;   //request any extra vertical space
+		c.anchor = GridBagConstraints.PAGE_END; //bottom of space
+		c.gridx = 0;
+		c.gridy = 2;       //third row
+		pane.add(panel, c);
+		
+		frame.pack();
+		frame.setVisible(true);
 	}
 	
 	private static void findHeaderStart() throws IOException, InterruptedException{
@@ -77,9 +143,12 @@ public class project_main {
 					int chan1 = dataPacket[2] << 16 | (dataPacket[3] & 0xff) << 8 | (dataPacket[4] & 0xff);;
 					int chan2 = dataPacket[5] << 16 | (dataPacket[6] & 0xff) << 8 | (dataPacket[7] & 0xff);;
 					
+					if (loggerStart)
+						logger.writeLine(String.valueOf(System.currentTimeMillis()) + " " +  chan1 + " " + chan2);
+					
 					realFftPlotter.addDataPoint((double) chan1); 
 					complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
-					if (realTimeUpdateCounter == realTimeUpdateRatio){
+					if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
 						chart1.update((float) chan1);
 						chart2.update((float) chan2);
 						realTimeUpdateCounter = 0;
@@ -92,4 +161,22 @@ public class project_main {
 			Thread.sleep(1);
 		}
 	}	
+
+	private static void testFFT(){
+		realFftPlotter.addDataPoint(0); 
+		realFftPlotter.addDataPoint(1); 
+		realFftPlotter.addDataPoint(0); 
+		realFftPlotter.addDataPoint(-1); 
+		
+		complexFftPlotter.addDataPoint(0); 
+		complexFftPlotter.addDataPoint(0); 
+		complexFftPlotter.addDataPoint(1); 
+		complexFftPlotter.addDataPoint(1); 
+		complexFftPlotter.addDataPoint(0); 
+		complexFftPlotter.addDataPoint(0); 
+		complexFftPlotter.addDataPoint(-1); 
+		complexFftPlotter.addDataPoint(-1); 
+		
+	}
+
 }

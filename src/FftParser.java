@@ -6,11 +6,11 @@ public class FftParser {
 	private double[] fft;
 	private int length;
 	
-	private boolean isComplex;
+	//private boolean isComplex;
 	
 	public FftParser(double[] fft, boolean isComplex){
 		this.fft = fft;
-		this.isComplex = isComplex;
+		//this.isComplex = isComplex;
 		length = fft.length;
 		
 		real = new double[length];
@@ -19,7 +19,7 @@ public class FftParser {
 		
 		
 		if (((fft.length/2) & 1) == 0)
-			parseEven();
+			parseEvenReal();
 		else
 			parseOdd();
 	}
@@ -42,14 +42,23 @@ public class FftParser {
 		return Complex.arrayToComplexArray(real, imag);
 	}
 	
-	private void parseEven(){
+	private void parseEvenReal(){
+		for(int k = 0; k < length/2; k++){
+			real[k] = fft[2*k];
+			imag[k] = fft[2*k+1];	
+		}
+		real[length/2] = fft[1];
+	}
+	
+	/*
+	private void parseEvenComplex(){
 		for(int k = 0; k < length/2; k++){
 			real[k] = fft[2*k];
 			imag[k] = fft[2*k+1];	
 		}
 		if (!isComplex)
 			real[length/2] = fft[1];
-	}
+	}*/
 	
 	private void parseOdd(){
 		System.out.println("ODD has yet to be developed");
