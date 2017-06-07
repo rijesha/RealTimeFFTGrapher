@@ -15,6 +15,7 @@ public class project_main {
 	private static boolean loggerStart;
 
 	private static boolean disableGUI;
+	private static String comPort = "COM9";
 
 	private static RealTimeGraph chart1;
 	private static RealTimeGraph chart2;
@@ -34,8 +35,7 @@ public class project_main {
 	public static void main(String[] args) {
 		parseCLI(args);
 		logger = new Logger(loggerStart);
-		//Logger.toggleLogging(loggerStart);
-		
+
 		SerialPortHandler s = new SerialPortHandler();	
 		in = s.getSerialInputStream();
 
@@ -62,7 +62,7 @@ public class project_main {
 			newFrame();
 
 		try {
-			s.connect("COM9");
+			s.connect(comPort);
 			findHeaderStart();
 			startSerialParsing();
 		} catch (IOException | InterruptedException e) {
@@ -81,6 +81,9 @@ public class project_main {
         Option output = new Option("l", "start_logging", false, "enabling logging on startup");
         options.addOption(output);
 
+        Option output = new Option("d", "serial_device_port", false, "location of serial device port");
+        options.addOption(output);
+
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd;
@@ -97,6 +100,9 @@ public class project_main {
 
         disableGUI = cmd.hasOption("disable_gui");
 		loggerStart = cmd.hasOption("start_logging");
+
+		if (cmd.hasOption("serial_device_port"))
+			comPort = cmd.getOptionValue("serial_device_port");
 	}
 
 	
