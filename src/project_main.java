@@ -81,8 +81,8 @@ public class project_main {
         Option output = new Option("l", "start_logging", false, "enabling logging on startup");
         options.addOption(output);
 
-        Option output = new Option("d", "serial_device_port", false, "location of serial device port");
-        options.addOption(output);
+        Option serialport = new Option("d", "serial_device_port", false, "location of serial device port");
+        options.addOption(serialport);
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
