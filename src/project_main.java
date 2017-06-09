@@ -10,6 +10,8 @@ import javax.swing.JPanel;
 
 import org.apache.commons.cli.*;
 
+import java.util.Random;
+
 public class project_main {
 	private static Logger logger;
 	private static boolean loggerStart;
@@ -66,7 +68,9 @@ public class project_main {
 			findHeaderStart();
 			startSerialParsing();
 		} catch (IOException | InterruptedException e) {
+			System.out.println("Failed to Open Serial Port");
 			e.printStackTrace();
+			fakeData();
 		}
 		        
         
@@ -198,7 +202,34 @@ public class project_main {
 			}
 			Thread.sleep(1);
 		}
-	}	
+	}
+
+	private static void fakeData() {
+		int realTimeUpdateCounter = 0;
+		Random rn = new Random();
+
+		while (true){
+			int chan1 = rn.nextInt();
+			int chan2 = rn.nextInt();
+					
+			if (loggerStart)
+				logger.writeLine(String.valueOf(System.currentTimeMillis()) + " " +  chan1 + " " + chan2);
+					
+			realFftPlotter.addDataPoint((double) chan1); 
+			complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
+			if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
+				chart1.update((float) chan1);
+				chart2.update((float) chan2);
+				realTimeUpdateCounter = 0;
+			}
+			realTimeUpdateCounter++;
+			try {
+				Thread.sleep(125);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	private static void testFFT(){
 		realFftPlotter.addDataPoint(0); 

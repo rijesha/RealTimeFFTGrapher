@@ -14,6 +14,7 @@ public class FftPlotter implements Runnable, ChangeListener{
 	private DoubleFFT_1D fftDo;
 	private double[] fft;
 	private double SAMPLINGFREQ;
+	private boolean changedSampleSize = false;
 	
 	public FftPlotter(String title, String yaxis, String xaxis, int samplingFreq, int fftSize, boolean isComplex){
 		SAMPLINGFREQ = samplingFreq;
@@ -27,7 +28,8 @@ public class FftPlotter implements Runnable, ChangeListener{
 		bufferSize = isComplex ? fftSize*2 : fftSize;
 		buffer = new CircularFifoQueue<Double>(bufferSize);
 		fft = new double[bufferSize*2];
-		graph.updateSeries(fftSize, SAMPLINGFREQ/((double)fftSize));		
+		graph.updateSeries(fftSize, SAMPLINGFREQ/((double)fftSize));
+		changedSampleSize = true;		
 	}
 	
 	public void addDataPoint(double... dps){
@@ -39,6 +41,11 @@ public class FftPlotter implements Runnable, ChangeListener{
 	@Override
 	public void run() {
 		while (!buffer.isAtFullCapacity()) {
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			System.out.println("Not yet Full");
 		}
 		double[] temp = new double[bufferSize];
@@ -64,6 +71,10 @@ public class FftPlotter implements Runnable, ChangeListener{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			if (changedSampleSize){
+				temp = new double[bufferSize];				
+				changedSampleSize = false;
+			}
 		}
 		
 	}
@@ -73,6 +84,7 @@ public class FftPlotter implements Runnable, ChangeListener{
 	    if (!source.getValueIsAdjusting()) {
 	        int fps = (int)source.getValue();
 	        System.out.println(fps);
+			changeSampleSize(fps);
 	    }
 	}
 	

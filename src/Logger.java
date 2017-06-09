@@ -89,8 +89,6 @@ public class Logger implements Runnable, ActionListener{
 		String command = e.getActionCommand();
 		toggleLogging(command == "Start Logging");
 		System.out.println(e);
-		// TODO Auto-generated method stub
-		
 	}
 	
 }
