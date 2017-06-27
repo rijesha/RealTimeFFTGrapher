@@ -3,6 +3,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -17,6 +19,7 @@ public class project_main {
 	private static boolean loggerStart;
 
 	private static boolean disableGUI;
+	private static boolean enablePipe = false;
 	private static String comPort = "COM9";
 
 	private static RealTimeGraph chart1;
@@ -53,7 +56,6 @@ public class project_main {
 		Thread fftcomplex = new Thread(complexFftPlotter);
 		fftcomplex.start();
 
-
 		try {
 			Thread.sleep(200);
 		} catch (InterruptedException e) {
@@ -63,16 +65,22 @@ public class project_main {
 		if (!disableGUI)
 			newFrame();
 
-		try {
-			s.connect(comPort);
-			findHeaderStart();
-			startSerialParsing();
-		} catch (IOException | InterruptedException e) {
-			System.out.println("Failed to Open Serial Port");
-			e.printStackTrace();
-			fakeData();
+		if (!enablePipe) {
+			try {
+				System.out.println("OPENING SERIAL PORT");
+				s.connect(comPort);
+				findHeaderStart();
+				startSerialParsing();
+			} catch (IOException | InterruptedException e) {
+				System.out.println("Failed to Open Serial Port");
+				e.printStackTrace();
+				fakeData();
+			}
 		}
-		        
+		else {
+			System.out.println("Piping Data");
+			pipedData();			
+		}	        
         
 	}
 	
@@ -87,6 +95,9 @@ public class project_main {
 
         Option serialport = new Option("d", "serial_device_port", false, "location of serial device port");
         options.addOption(serialport);
+
+		Option piping = new Option("p", "enable_pipe", false, "Pipe information from System.in");
+        options.addOption(piping);
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -104,6 +115,7 @@ public class project_main {
 
         disableGUI = cmd.hasOption("disable_gui");
 		loggerStart = cmd.hasOption("start_logging");
+		enablePipe = cmd.hasOption("enable_pipe");
 
 		if (cmd.hasOption("serial_device_port"))
 			comPort = cmd.getOptionValue("serial_device_port");
@@ -201,6 +213,26 @@ public class project_main {
 					findHeaderStart();
 			}
 			Thread.sleep(1);
+		}
+	}
+
+	private static void pipedData() {
+		int realTimeUpdateCounter = 0;
+		InputStreamReader isReader = new InputStreamReader(System.in);
+		BufferedReader bufReader = new BufferedReader(isReader);
+		
+		while (true){
+			try {
+				System.out.println(bufReader.readLine());
+			} catch (Exception e) {
+				System.out.println("No input");
+			}
+			try {
+				Thread.sleep(125);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
 		}
 	}
 
