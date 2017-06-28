@@ -42,8 +42,7 @@ public class project_main {
 		logger = new Logger(loggerStart);
 
 		SerialPortHandler s = new SerialPortHandler();	
-		in = s.getSerialInputStream();
-
+		
 		chart1 = new RealTimeGraph("In Phase Voltage Signal", "Voltage", "");
 		chart2 = new RealTimeGraph("In Quadrature Voltage Signal", "Voltage", "");
 		
@@ -69,6 +68,9 @@ public class project_main {
 			try {
 				System.out.println("OPENING SERIAL PORT");
 				s.connect(comPort);
+				in = s.getSerialInputStream();
+				System.out.println(in);
+				System.out.println(comPort);
 				findHeaderStart();
 				startSerialParsing();
 			} catch (IOException | InterruptedException e) {
@@ -177,13 +179,19 @@ public class project_main {
 		byte[] two = new byte[1];
 		boolean foundStart = false;
 		
+		System.out.println("LOOKING FOR HEADER");
 		in.read(one);
 		while (foundStart == false){
-			one = two;
+
+			
+			one[0] = two[0];
 			in.read(two);
 			Thread.sleep(2);
 			if ((one[0] == 21) && (two[0] == 22))
 				foundStart = true;
+			System.out.println("LOOKING FOR HEADER");
+			System.out.println(one[0]);
+			System.out.println(two[0]);
 		}
 	}
 	
@@ -228,7 +236,7 @@ public class project_main {
 				System.out.println("No input");
 			}
 			try {
-				Thread.sleep(125);
+				Thread.sleep(8);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -256,7 +264,7 @@ public class project_main {
 			}
 			realTimeUpdateCounter++;
 			try {
-				Thread.sleep(125);
+				Thread.sleep(8);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

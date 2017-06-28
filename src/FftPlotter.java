@@ -42,11 +42,11 @@ public class FftPlotter implements Runnable, ChangeListener{
 	public void run() {
 		while (!buffer.isAtFullCapacity()) {
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(10000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			System.out.println("Not yet Full");
+			System.out.println("Buffer Not yet Full");
 		}
 		double[] temp = new double[bufferSize];
 		int i;
