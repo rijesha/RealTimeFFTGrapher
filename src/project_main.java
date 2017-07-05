@@ -228,15 +228,26 @@ public class project_main {
 		int realTimeUpdateCounter = 0;
 		InputStreamReader isReader = new InputStreamReader(System.in);
 		BufferedReader bufReader = new BufferedReader(isReader);
-		
+		String text = null;
 		while (true){
 			try {
+				text = bufReader.readLine();
+				String[] t = text.split("\\s+");
+				Long timeStamp = Long.valueOf(t[0]);
+
+				if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
+					chart1.update((float) Integer.valueOf(t[1]));
+				    chart2.update((float) Integer.valueOf(t[2]));
+					realTimeUpdateCounter = 0;
+				}
+				realTimeUpdateCounter++;	
+
 				System.out.println(bufReader.readLine());
 			} catch (Exception e) {
 				System.out.println("No input");
 			}
 			try {
-				Thread.sleep(8);
+				Thread.sleep(7);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
