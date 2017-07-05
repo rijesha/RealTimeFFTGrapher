@@ -6,7 +6,10 @@ import javax.swing.event.ChangeListener;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.jtransforms.fft.DoubleFFT_1D;
 
+import java.util.concurrent.Semaphore;
+
 public class FftPlotter implements Runnable, ChangeListener{
+	private Semaphore bufferLock;
 	private int bufferSize;
 	private boolean isComplex;
 	private CircularFifoQueue<Double> buffer;
@@ -15,8 +18,10 @@ public class FftPlotter implements Runnable, ChangeListener{
 	private double[] fft;
 	private double SAMPLINGFREQ;
 	private boolean changedSampleSize = false;
+	private double[] temp;
 	
 	public FftPlotter(String title, String yaxis, String xaxis, int samplingFreq, int fftSize, boolean isComplex){
+		bufferLock = new Semaphore(1);
 		SAMPLINGFREQ = samplingFreq;
 		this.isComplex = isComplex;
 		graph = new XYGraph(title, yaxis, xaxis, fftSize, 3.90625, this);
@@ -24,12 +29,19 @@ public class FftPlotter implements Runnable, ChangeListener{
 	}
 	
 	public void changeSampleSize(int fftSize){
+		try {
+			bufferLock.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		fftDo = new DoubleFFT_1D(fftSize);
 		bufferSize = isComplex ? fftSize*2 : fftSize;
 		buffer = new CircularFifoQueue<Double>(bufferSize);
 		fft = new double[bufferSize*2];
 		graph.updateSeries(fftSize, SAMPLINGFREQ/((double)fftSize));
-		changedSampleSize = true;		
+		changedSampleSize = true;
+		bufferLock.release();
 	}
 	
 	public void addDataPoint(double... dps){
@@ -48,14 +60,29 @@ public class FftPlotter implements Runnable, ChangeListener{
 			}
 			System.out.println("Buffer Not yet Full");
 		}
-		double[] temp = new double[bufferSize];
-		int i;
 		while (true){
-			i = 0;
-			for (Double d : buffer){
-				temp[i] = (double) d;
-				i++;
+			try {
+				bufferLock.acquire();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
+
+			temp = new double[bufferSize];
+			int i;
+			
+			for (i = 0; i < buffer.size(); i++) {
+				try {
+				temp[i] = (double) buffer.get(i);
+				} catch (Exception e) {
+					System.out.println("Indexing Error");
+					System.out.println(temp.length);
+					System.out.println(buffer.size());
+					System.out.println(i);
+				}
+			}
+			
+			bufferLock.release();
 			System.arraycopy(temp, 0, fft, 0, temp.length);
 			if (isComplex)
 				fftDo.complexForward(fft);
@@ -84,7 +111,10 @@ public class FftPlotter implements Runnable, ChangeListener{
 	    if (!source.getValueIsAdjusting()) {
 	        int fps = (int)source.getValue();
 	        System.out.println(fps);
-			changeSampleSize(fps);
+	        if (fps > 0) {
+				changeSampleSize(fps);
+	        	System.out.println("Changed FPS");
+	        }
 	    }
 	}
 	

@@ -3,6 +3,8 @@ import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.ChartPanel;
 
+import java.util.concurrent.Semaphore;
+
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
@@ -16,8 +18,10 @@ public class RealTimeGraph extends JPanel {
 
     private DynamicTimeSeriesCollection dataset;
     private JFreeChart chart = null;
+    private Semaphore calendarLock;
 
-    public RealTimeGraph(String title, String yaxis, String xaxis) {
+    public RealTimeGraph(String title, String yaxis, String xaxis, Semaphore calendarLock) {
+    	this.calendarLock = calendarLock;
         dataset = new DynamicTimeSeriesCollection(1, 2000, new Second());
         dataset.setTimeBase(new Second()); 
 
@@ -39,7 +43,14 @@ public class RealTimeGraph extends JPanel {
     }
 
     public void update(float value) {
+    	try {
+			calendarLock.acquire();
+		} catch (InterruptedException e) {
+			System.out.println("Calendar Lock Semaphore issue");
+			e.printStackTrace();
+		}
         dataset.advanceTime();
         dataset.appendData(new float[]{value});
+        calendarLock.release();
     }
 }

@@ -11,10 +11,14 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import org.apache.commons.cli.*;
+import java.util.concurrent.Semaphore;
+
 
 import java.util.Random;
 
 public class project_main {
+	private static Semaphore calendarLock = new Semaphore(1);
+	
 	private static Logger logger;
 	private static boolean loggerStart;
 
@@ -43,8 +47,8 @@ public class project_main {
 
 		SerialPortHandler s = new SerialPortHandler();	
 		
-		chart1 = new RealTimeGraph("In Phase Voltage Signal", "Voltage", "");
-		chart2 = new RealTimeGraph("In Quadrature Voltage Signal", "Voltage", "");
+		chart1 = new RealTimeGraph("In Phase Voltage Signal", "Voltage", "", calendarLock);
+		chart2 = new RealTimeGraph("In Quadrature Voltage Signal", "Voltage", "", calendarLock);
 		
 		realFftPlotter = new FftPlotter("Real FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, false);
 		complexFftPlotter = new FftPlotter("Complex FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, true);
@@ -66,6 +70,7 @@ public class project_main {
 
 		if (!enablePipe) {
 			try {
+				fakeData();
 				System.out.println("OPENING SERIAL PORT");
 				s.connect(comPort);
 				in = s.getSerialInputStream();
@@ -73,7 +78,7 @@ public class project_main {
 				System.out.println(comPort);
 				findHeaderStart();
 				startSerialParsing();
-			} catch (IOException | InterruptedException e) {
+			} catch (Exception e) {
 				System.out.println("Failed to Open Serial Port");
 				e.printStackTrace();
 				fakeData();
@@ -233,11 +238,16 @@ public class project_main {
 			try {
 				text = bufReader.readLine();
 				String[] t = text.split("\\s+");
+				double chan1 = Double.valueOf(t[1]);
+				double chan2 = Double.valueOf(t[2]);
 				Long timeStamp = Long.valueOf(t[0]);
 
+				realFftPlotter.addDataPoint((double) chan1); 
+				complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
+				
 				if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
-					chart1.update((float) Integer.valueOf(t[1]));
-				    chart2.update((float) Integer.valueOf(t[2]));
+					chart1.update((float) chan1);
+				    chart2.update((float) chan2);
 					realTimeUpdateCounter = 0;
 				}
 				realTimeUpdateCounter++;	
@@ -268,6 +278,13 @@ public class project_main {
 					
 			realFftPlotter.addDataPoint((double) chan1); 
 			complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
+			
+			try {
+				Thread.sleep(8);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
 			if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
 				chart1.update((float) chan1);
 				chart2.update((float) chan2);
