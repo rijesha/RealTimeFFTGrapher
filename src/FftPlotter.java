@@ -20,11 +20,11 @@ public class FftPlotter implements Runnable, ChangeListener{
 	private boolean changedSampleSize = false;
 	private double[] temp;
 	
-	public FftPlotter(String title, String yaxis, String xaxis, int samplingFreq, int fftSize, boolean isComplex){
+	public FftPlotter(String title, String yaxis, String xaxis, int samplingFreq, int fftSize, boolean isComplex, Semaphore calendarLock){
 		bufferLock = new Semaphore(1);
 		SAMPLINGFREQ = samplingFreq;
 		this.isComplex = isComplex;
-		graph = new XYGraph(title, yaxis, xaxis, fftSize, 3.90625, this);
+		graph = new XYGraph(title, yaxis, xaxis, fftSize, 3.90625, this, calendarLock);
 		changeSampleSize(fftSize);
 	}
 	
@@ -70,16 +70,23 @@ public class FftPlotter implements Runnable, ChangeListener{
 
 			temp = new double[bufferSize];
 			int i;
+			double avg = 0;
 			
 			for (i = 0; i < buffer.size(); i++) {
-				try {
-				temp[i] = (double) buffer.get(i);
+				try { 
+					temp[i] = (double) buffer.get(i);
+					avg = avg + temp[i];
 				} catch (Exception e) {
 					System.out.println("Indexing Error");
 					System.out.println(temp.length);
 					System.out.println(buffer.size());
 					System.out.println(i);
 				}
+			}
+			avg = avg/temp.length;
+
+			for (int j=0; j<temp.length; j++) {
+				temp[j] = temp[j] - avg;
 			}
 			
 			bufferLock.release();
@@ -89,11 +96,16 @@ public class FftPlotter implements Runnable, ChangeListener{
 			else
 				fftDo.realForwardFull(fft);
 			
+			/*
+			for (int j=0; j<fft.length; j++) {
+				fft[j] = 20 * java.lang.Math.log10(fft[j]);
+			}*/
+
 			//FftParser fp = new FftParser(fft, isComplex);
 			//Complex[] cp = fp.returnComplexArray();
 			graph.updateSeriesYaxis(new FftParser(fft, isComplex).returnMagnitudeArray());
 			try {
-				Thread.sleep(150);
+				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

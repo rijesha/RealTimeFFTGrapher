@@ -36,12 +36,14 @@ public class project_main {
 			
 	private static InputStream in;
 	private static byte[] dataPacket = new byte[10];
-	private static int REALTIMEUPDATERATIO = 4;
-
-	private static JButton startButton = new JButton("Start Logging");
-	private static JButton stopButton = new JButton("Stop Logging");
+	private static int REALTIMEUPDATERATIO = 13;
 	
+	private static final double VREF = 4.033;
+	private static final int MAXADC = 8388607;
+	private static double interval = VREF/MAXADC; 
+
 	public static void main(String[] args) {
+		System.out.println(interval);
 		parseCLI(args);
 		logger = new Logger(loggerStart);
 
@@ -50,8 +52,8 @@ public class project_main {
 		chart1 = new RealTimeGraph("In Phase Voltage Signal", "Voltage", "", calendarLock);
 		chart2 = new RealTimeGraph("In Quadrature Voltage Signal", "Voltage", "", calendarLock);
 		
-		realFftPlotter = new FftPlotter("Real FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, false);
-		complexFftPlotter = new FftPlotter("Complex FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, true);
+		realFftPlotter = new FftPlotter("Real FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, false, calendarLock);
+		complexFftPlotter = new FftPlotter("Complex FFT", "power", "Frequency (Hz)", SAMPLINGFREQ, 4, true, calendarLock);
 		
 		Thread fftreal = new Thread(realFftPlotter);
 		fftreal.start();
@@ -149,7 +151,7 @@ public class project_main {
 		pane.add(chart1, c);
 
 		c.gridx = 1;
-		pane.add(chart2, c);
+	 	pane.add(chart2, c);
 
 		c.gridx = 0;
 		c.gridy = 1;
@@ -158,23 +160,7 @@ public class project_main {
 		c.gridx = 1;
 		pane.add(complexFftPlotter.getGraph(), c);
 
-		
-		JPanel panel = new JPanel();
-		
-		startButton.addActionListener(logger);
-		panel.add(startButton);
-		
-		stopButton.addActionListener(logger);
-		panel.add(stopButton);
-		
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.ipady = 1;       //reset to default
-		c.weighty = 1;   //request any extra vertical space
-		c.anchor = GridBagConstraints.PAGE_END; //bottom of space
-		c.gridx = 0;
-		c.gridy = 2;       //third row
-		pane.add(panel, c);
-		
+				
 		frame.pack();
 		frame.setVisible(true);
 	}
@@ -213,8 +199,8 @@ public class project_main {
 					if (loggerStart)
 						logger.writeLine(String.valueOf(System.currentTimeMillis()) + " " +  chan1 + " " + chan2);
 					
-					realFftPlotter.addDataPoint((double) chan1); 
-					complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
+		//			realFftPlotter.addDataPoint((double) chan1); 
+		//			complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
 					if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
 						chart1.update((float) chan1);
 						chart2.update((float) chan2);
@@ -234,28 +220,30 @@ public class project_main {
 		InputStreamReader isReader = new InputStreamReader(System.in);
 		BufferedReader bufReader = new BufferedReader(isReader);
 		String text = null;
+		double chan1 = 0;
+		double chan2 = 0;
+		
 		while (true){
 			try {
 				text = bufReader.readLine();
 				String[] t = text.split("\\s+");
-				double chan1 = Double.valueOf(t[1]);
-				double chan2 = Double.valueOf(t[2]);
-				Long timeStamp = Long.valueOf(t[0]);
-
-				realFftPlotter.addDataPoint((double) chan1); 
-				complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
-				
-				if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
-					chart1.update((float) chan1);
-				    chart2.update((float) chan2);
-					realTimeUpdateCounter = 0;
-				}
-				realTimeUpdateCounter++;	
-
-				System.out.println(bufReader.readLine());
+				chan1 = Double.valueOf(t[1])*interval;
+				chan2 = Double.valueOf(t[2])*interval;
 			} catch (Exception e) {
+				e.printStackTrace();
 				System.out.println("No input");
 			}
+
+			realFftPlotter.addDataPoint((double) chan1); 
+			complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
+		
+			if (realTimeUpdateCounter == REALTIMEUPDATERATIO){
+				chart1.update((float) chan1);
+			    chart2.update((float) chan2);						
+				realTimeUpdateCounter = 0;
+			}
+			realTimeUpdateCounter++;
+			
 			try {
 				Thread.sleep(7);
 			} catch (InterruptedException e) {
@@ -276,8 +264,8 @@ public class project_main {
 			if (loggerStart)
 				logger.writeLine(String.valueOf(System.currentTimeMillis()) + " " +  chan1 + " " + chan2);
 					
-			realFftPlotter.addDataPoint((double) chan1); 
-			complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
+	//		realFftPlotter.addDataPoint((double) chan1); 
+	//`		complexFftPlotter.addDataPoint((double) chan1, (double) chan2); 
 			
 			try {
 				Thread.sleep(8);
@@ -299,7 +287,7 @@ public class project_main {
 		}
 	}
 
-	private static void testFFT(){
+/*	private static void testFFT(){
 		realFftPlotter.addDataPoint(0); 
 		realFftPlotter.addDataPoint(1); 
 		realFftPlotter.addDataPoint(0); 
@@ -314,6 +302,6 @@ public class project_main {
 		complexFftPlotter.addDataPoint(-1); 
 		complexFftPlotter.addDataPoint(-1); 
 		
-	}
+	}*/
 
 }
