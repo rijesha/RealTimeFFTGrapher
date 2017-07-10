@@ -19,6 +19,8 @@ public class FftPlotter implements Runnable, ChangeListener{
 	private double SAMPLINGFREQ;
 	private boolean changedSampleSize = false;
 	private double[] temp;
+	private int paddedSize = 128;
+	private int paddedFFTSize;
 	
 	public FftPlotter(String title, String yaxis, String xaxis, int samplingFreq, int fftSize, boolean isComplex, Semaphore calendarLock){
 		bufferLock = new Semaphore(1);
@@ -35,10 +37,13 @@ public class FftPlotter implements Runnable, ChangeListener{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		fftDo = new DoubleFFT_1D(fftSize);
+		fftDo = new DoubleFFT_1D(paddedSize);
+		paddedFFTSize = isComplex ? paddedSize*2 : paddedSize;
+
 		bufferSize = isComplex ? fftSize*2 : fftSize;
 		buffer = new CircularFifoQueue<Double>(bufferSize);
-		fft = new double[bufferSize*2];
+		
+		fft = new double[paddedFFTSize*2];
 		graph.updateSeries(fftSize, SAMPLINGFREQ/((double)fftSize));
 		changedSampleSize = true;
 		bufferLock.release();
@@ -83,6 +88,20 @@ public class FftPlotter implements Runnable, ChangeListener{
 					System.out.println(i);
 				}
 			}
+			
+			for (; i < paddedFFTSize; i++) {
+				try { 
+					temp[i] = 0;
+					//avg = avg + temp[i];
+				} catch (Exception e) {
+					System.out.println("Indexing Error");
+					System.out.println(temp.length);
+					System.out.println(buffer.size());
+					System.out.println(i);
+				}
+			}
+			
+			
 			/*avg = avg/temp.length;
 
 			for (int j=0; j<temp.length; j++) {
