@@ -227,8 +227,8 @@ public class project_main {
 			try {
 				text = bufReader.readLine();
 				String[] t = text.split("\\s+");
-				chan1 = Double.valueOf(t[1])*interval;
-				chan2 = Double.valueOf(t[2])*interval;
+				chan1 = Double.valueOf(t[1]); //*interval;
+				chan2 = Double.valueOf(t[2]); //*interval;
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println("No input");

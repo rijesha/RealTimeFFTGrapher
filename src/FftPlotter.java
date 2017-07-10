@@ -75,7 +75,7 @@ public class FftPlotter implements Runnable, ChangeListener{
 			for (i = 0; i < buffer.size(); i++) {
 				try { 
 					temp[i] = (double) buffer.get(i);
-					avg = avg + temp[i];
+					//avg = avg + temp[i];
 				} catch (Exception e) {
 					System.out.println("Indexing Error");
 					System.out.println(temp.length);
@@ -83,11 +83,11 @@ public class FftPlotter implements Runnable, ChangeListener{
 					System.out.println(i);
 				}
 			}
-			avg = avg/temp.length;
+			/*avg = avg/temp.length;
 
 			for (int j=0; j<temp.length; j++) {
 				temp[j] = temp[j] - avg;
-			}
+			}*/
 			
 			bufferLock.release();
 			System.arraycopy(temp, 0, fft, 0, temp.length);
@@ -105,7 +105,7 @@ public class FftPlotter implements Runnable, ChangeListener{
 			//Complex[] cp = fp.returnComplexArray();
 			graph.updateSeriesYaxis(new FftParser(fft, isComplex).returnMagnitudeArray());
 			try {
-				Thread.sleep(100);
+				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
